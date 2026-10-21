@@ -1,0 +1,17 @@
+{
+  "name": "wav-to-mp3",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local page that converts WAV files to MP3 with ffmpeg.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChrisEdS/wav-to-mp3.git"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
