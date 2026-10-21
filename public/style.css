@@ -37,6 +37,42 @@ main {
 
 header { margin-bottom: 28px; }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.header-row .eyebrow { margin: 0; }
+
+.lang {
+  display: flex;
+  flex: none;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+}
+
+.lang button {
+  min-height: 32px;
+  min-width: 44px;
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+}
+
+.lang button:hover { background: transparent; }
+
+.lang button[aria-pressed="true"],
+.lang button[aria-pressed="true"]:hover {
+  background: var(--ink);
+  color: #fbf7f1;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--accent-deep);

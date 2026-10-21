@@ -6,9 +6,9 @@ Drop the files, pick a bitrate, and download one MP3 or the whole batch as a ZIP
 
 [Donate via GitHub Sponsors](https://github.com/sponsors/ChrisEdS)
 
-![wav-to-mp3 after converting two WAV files, with download and ZIP buttons](docs/screenshot.png)
+![wav-to-mp3 in English, with the language switch and two finished files](docs/screenshot.png)
 
-The page is in German.
+The page opens in English. Use **DE** in the header to switch to German. That choice stays in this browser.
 
 ## Run
 
@@ -28,10 +28,10 @@ Set `PORT` to use another port. Set `OPEN=0` to start without opening the browse
 1. Drop `.wav` files on the page, or choose them. Anything that is not a WAV is refused.
 2. The page sends one file at a time to the local server.
 3. ffmpeg writes an MP3 at the bitrate you picked and keeps tags that were already in the WAV.
-4. The row turns green. **Herunterladen** saves that MP3. **Alle als ZIP** packs every finished file into `mp3s.zip`.
+4. The row turns green. **Download** saves that MP3. **All as ZIP** packs every finished file into `mp3s.zip`.
 
-192 kbps is the default and is enough for most listening. 320 keeps more of the original. 128 makes the smallest file.
+320 kbps is the default and keeps the most of the original. 192 is enough for most listening. 128 makes the smallest file.
 
-**Liste leeren** removes every row and cancels a conversion that is still running. It does not delete an MP3 you already saved.
+**Clear list** removes every row and cancels a conversion that is still running. It does not delete an MP3 you already saved.
 
 A file larger than 500 MB is refused. A name that appears twice in one ZIP gets a suffix, so the second `Ton.wav` becomes `Ton (2).mp3`.

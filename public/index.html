@@ -1,29 +1,35 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WAV zu MP3</title>
+    <title>WAV to MP3</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c4491d'/%3E%3Cpath d='M7 20V12h2.2v8H7zm4.2-11v14h2.2V9h-2.2zm4.4 3v8h2.2v-8h-2.2zm4.4-2v12h2.2V10h-2.2zM24.4 13v6H26v-6h-1.6z' fill='%23fff8f3'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <main>
       <header>
-        <p class="eyebrow">Lokal auf diesem Mac</p>
-        <h1>WAV zu MP3</h1>
-        <p class="lede">Zieh eine oder mehrere WAV-Dateien hierher. Die Umwandlung bleibt auf diesem Rechner, die MP3s lädst du danach herunter.</p>
+        <div class="header-row">
+          <p class="eyebrow" data-i18n="eyebrow">On this Mac</p>
+          <div id="lang" class="lang" role="group" aria-label="Language">
+            <button type="button" data-lang="en" aria-pressed="true">EN</button>
+            <button type="button" data-lang="de" aria-pressed="false">DE</button>
+          </div>
+        </div>
+        <h1 data-i18n="title">WAV to MP3</h1>
+        <p class="lede" data-i18n="lede">Drop one or more WAV files here. Conversion stays on this computer, and you download the MP3s when they are ready.</p>
       </header>
 
       <section class="panel">
         <div class="quality">
-          <span id="quality-label">Qualität</span>
+          <span id="quality-label" data-i18n="quality">Quality</span>
           <div class="quality-control">
             <div class="segments" role="radiogroup" aria-labelledby="quality-label">
               <label><input type="radio" name="bitrate" value="128" />128</label>
-              <label><input type="radio" name="bitrate" value="192" checked />192</label>
+              <label><input type="radio" name="bitrate" value="192" />192</label>
               <label><input type="radio" name="bitrate" value="256" />256</label>
-              <label><input type="radio" name="bitrate" value="320" />320</label>
+              <label><input type="radio" name="bitrate" value="320" checked />320</label>
             </div>
             <span class="unit">kbps</span>
           </div>
@@ -33,9 +39,9 @@
           <div class="bars" aria-hidden="true">
             <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
           </div>
-          <p>WAV-Dateien hierher ziehen</p>
+          <p data-i18n="drop">Drop WAV files here</p>
           <label class="choose">
-            oder auswählen
+            <span data-i18n="choose">or choose files</span>
             <input id="file" class="file-input" type="file" accept=".wav,.wave,audio/wav,audio/wave,audio/x-wav" multiple />
           </label>
         </div>
@@ -44,8 +50,8 @@
         <ul id="list" class="list"></ul>
 
         <div class="actions">
-          <button id="download-all" type="button" hidden>Alle als ZIP</button>
-          <button id="clear" type="button" class="ghost" hidden>Liste leeren</button>
+          <button id="download-all" type="button" data-i18n="downloadAll" hidden>All as ZIP</button>
+          <button id="clear" type="button" class="ghost" data-i18n="clear" hidden>Clear list</button>
         </div>
       </section>
     </main>

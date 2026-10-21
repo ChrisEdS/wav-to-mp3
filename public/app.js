@@ -9,9 +9,94 @@ const jobs = [];
 const queue = [];
 let busy = false;
 let dragDepth = 0;
+let lang = "en";
+
+const copy = {
+  en: {
+    title: "WAV to MP3",
+    eyebrow: "On this Mac",
+    lede: "Drop one or more WAV files here. Conversion stays on this computer, and you download the MP3s when they are ready.",
+    quality: "Quality",
+    drop: "Drop WAV files here",
+    choose: "or choose files",
+    download: "Download",
+    downloadAll: "All as ZIP",
+    zipping: "Creating ZIP…",
+    clear: "Clear list",
+    waiting: "Waiting",
+    uploading: "Uploading",
+    converting: "Converting",
+    done: "Done",
+    wavOnly: "WAV files only.",
+    "not-wav": "This is not a WAV file.",
+    empty: "The file is empty.",
+    "too-large": "The file is too large (maximum 500 MB).",
+    "bad-bitrate": "Unknown bitrate.",
+    "ffmpeg-missing": "ffmpeg was not found.",
+    "ffmpeg-failed": "ffmpeg could not convert the file.",
+    failed: "Conversion failed.",
+    connection: "Lost the connection to the local server.",
+    zipFailed: "The ZIP could not be created.",
+    serverDown: "The local server is not responding.",
+    langLabel: "Language",
+  },
+  de: {
+    title: "WAV zu MP3",
+    eyebrow: "Lokal auf diesem Mac",
+    lede: "Zieh eine oder mehrere WAV-Dateien hierher. Die Umwandlung bleibt auf diesem Rechner, die MP3s lädst du danach herunter.",
+    quality: "Qualität",
+    drop: "WAV-Dateien hierher ziehen",
+    choose: "oder auswählen",
+    download: "Herunterladen",
+    downloadAll: "Alle als ZIP",
+    zipping: "ZIP wird erstellt…",
+    clear: "Liste leeren",
+    waiting: "Wartet",
+    uploading: "Hochladen",
+    converting: "Umwandeln",
+    done: "Fertig",
+    wavOnly: "Nur WAV-Dateien.",
+    "not-wav": "Das ist keine WAV-Datei.",
+    empty: "Die Datei ist leer.",
+    "too-large": "Die Datei ist zu groß (maximal 500 MB).",
+    "bad-bitrate": "Unbekannte Bitrate.",
+    "ffmpeg-missing": "ffmpeg wurde nicht gefunden.",
+    "ffmpeg-failed": "ffmpeg konnte die Datei nicht umwandeln.",
+    failed: "Umwandlung fehlgeschlagen.",
+    connection: "Verbindung zum lokalen Server verloren.",
+    zipFailed: "Das ZIP konnte nicht erstellt werden.",
+    serverDown: "Der lokale Server antwortet nicht.",
+    langLabel: "Sprache",
+  },
+};
+
+function t(key) {
+  return copy[lang][key] ?? copy.en[key] ?? key;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  document.title = t("title");
+  document.querySelector("#lang").setAttribute("aria-label", t("langLabel"));
+  for (const node of document.querySelectorAll("[data-i18n]")) {
+    if (node.id === "download-all" && node.disabled) node.textContent = t("zipping");
+    else node.textContent = t(node.dataset.i18n);
+  }
+  for (const button of document.querySelectorAll("[data-lang]")) {
+    button.setAttribute("aria-pressed", button.dataset.lang === lang ? "true" : "false");
+  }
+  if (banner.dataset.i18n) banner.textContent = t(banner.dataset.i18n);
+  for (const job of jobs) paintJob(job);
+}
+
+function setLang(next) {
+  lang = next === "de" ? "de" : "en";
+  localStorage.setItem("wav-to-mp3-lang", lang);
+  applyLanguage();
+}
 
 function selectedBitrate() {
-  return document.querySelector('input[name="bitrate"]:checked')?.value ?? "192";
+  return document.querySelector('input[name="bitrate"]:checked')?.value ?? "320";
 }
 
 function formatBytes(bytes) {
@@ -30,7 +115,7 @@ function addFiles(fileList) {
     jobs.push(job);
     list.append(job.element);
     if (!isWav(file)) {
-      setStatus(job, "error", "Nur WAV-Dateien.");
+      setJobState(job, "error", "wavOnly");
       continue;
     }
     job.bitrate = selectedBitrate();
@@ -47,11 +132,11 @@ function createJob(file) {
   element.innerHTML = `
     <div class="item-top">
       <strong></strong>
-      <span class="status">Wartet</span>
+      <span class="status"></span>
     </div>
     <div class="item-meta">
       <span class="meta"></span>
-      <a class="download" hidden download>Herunterladen</a>
+      <a class="download" hidden download></a>
     </div>
     <div class="track"><div class="fill"></div></div>
   `;
@@ -65,23 +150,39 @@ function createJob(file) {
     fill: element.querySelector(".fill"),
     url: "",
     bitrate: selectedBitrate(),
+    state: "waiting",
+    messageKey: "waiting",
   };
   job.meta.textContent = formatBytes(file.size);
+  paintJob(job);
   return job;
 }
 
-function setStatus(job, kind, label) {
-  job.status.textContent = label;
-  job.status.classList.toggle("done", kind === "done");
-  job.status.classList.toggle("error", kind === "error");
-  job.fill.classList.remove("busy");
-  job.fill.style.width = kind === "done" || kind === "error" ? "100%" : job.fill.style.width;
-  if (kind === "error") job.fill.style.background = "var(--danger)";
+function setJobState(job, state, messageKey) {
+  job.state = state;
+  job.messageKey = messageKey;
+  paintJob(job);
   updateActions();
 }
 
-function setProgress(job, ratio, label, indeterminate) {
-  job.status.textContent = label;
+function paintJob(job) {
+  const failed = job.state === "error";
+  const done = job.state === "done";
+  job.status.textContent = t(job.messageKey);
+  job.status.classList.toggle("done", done);
+  job.status.classList.toggle("error", failed);
+  job.link.textContent = t("download");
+  if (done || failed) {
+    job.fill.classList.remove("busy");
+    job.fill.style.width = "100%";
+    job.fill.style.background = failed ? "var(--danger)" : "";
+  }
+}
+
+function setProgress(job, ratio, messageKey, indeterminate) {
+  job.state = indeterminate ? "converting" : "uploading";
+  job.messageKey = messageKey;
+  job.status.textContent = t(messageKey);
   job.status.classList.remove("done", "error");
   job.fill.style.background = "";
   job.fill.classList.toggle("busy", indeterminate);
@@ -110,9 +211,9 @@ function convertJob(job) {
 
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable) return;
-      setProgress(job, event.loaded / event.total, "Hochladen", false);
+      setProgress(job, event.loaded / event.total, "uploading", false);
     };
-    xhr.upload.onload = () => setProgress(job, 1, "Umwandeln", true);
+    xhr.upload.onload = () => setProgress(job, 1, "converting", true);
 
     xhr.onload = async () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -124,15 +225,15 @@ function convertJob(job) {
         job.link.download = job.mp3Name;
         job.link.hidden = false;
         job.meta.textContent = `${formatBytes(job.file.size)} → ${formatBytes(blob.size)} · ${job.bitrate} kbps`;
-        setStatus(job, "done", "Fertig");
+        setJobState(job, "done", "done");
       } else {
-        setStatus(job, "error", await readError(xhr.response));
+        setJobState(job, "error", await readError(xhr.response));
       }
       resolve();
     };
 
     xhr.onerror = () => {
-      setStatus(job, "error", "Verbindung zum lokalen Server verloren.");
+      setJobState(job, "error", "connection");
       resolve();
     };
     xhr.onabort = () => resolve();
@@ -143,9 +244,9 @@ function convertJob(job) {
 async function readError(blob) {
   try {
     const data = JSON.parse(await blob.text());
-    return data.error || "Umwandlung fehlgeschlagen.";
+    return data.error || "failed";
   } catch {
-    return "Umwandlung fehlgeschlagen.";
+    return "failed";
   }
 }
 
@@ -248,7 +349,7 @@ async function downloadAll() {
   const ready = jobs.filter((job) => job.blob);
   if (!ready.length || downloadAllButton.disabled) return;
   downloadAllButton.disabled = true;
-  downloadAllButton.textContent = "ZIP wird erstellt…";
+  downloadAllButton.textContent = t("zipping");
   try {
     const zip = await buildZip(ready.map((job) => ({ name: job.mp3Name, blob: job.blob })));
     const url = URL.createObjectURL(zip);
@@ -260,12 +361,17 @@ async function downloadAll() {
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch {
-    banner.hidden = false;
-    banner.textContent = "Das ZIP konnte nicht erstellt werden.";
+    showBanner("zipFailed");
   } finally {
     downloadAllButton.disabled = false;
-    downloadAllButton.textContent = "Alle als ZIP";
+    downloadAllButton.textContent = t("downloadAll");
   }
+}
+
+function showBanner(key) {
+  banner.hidden = false;
+  banner.dataset.i18n = key;
+  banner.textContent = t(key);
 }
 
 function clearJobs() {
@@ -320,8 +426,15 @@ window.addEventListener("drop", (event) => {
 
 downloadAllButton.addEventListener("click", downloadAll);
 clearButton.addEventListener("click", clearJobs);
+document.querySelector("#lang").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-lang]");
+  if (!button) return;
+  setLang(button.dataset.lang);
+});
+
+const savedLang = localStorage.getItem("wav-to-mp3-lang");
+setLang(savedLang === "de" ? "de" : "en");
 
 fetch("/api/health").catch(() => {
-  banner.hidden = false;
-  banner.textContent = "Der lokale Server antwortet nicht.";
+  showBanner("serverDown");
 });

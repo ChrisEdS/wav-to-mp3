@@ -26,18 +26,18 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST" && url.pathname === "/api/convert") {
     return handleConvert(req, res, url).catch((error) => {
       console.error(error);
-      if (!res.headersSent) sendJson(res, 500, { error: "Umwandlung fehlgeschlagen." });
+      if (!res.headersSent) sendJson(res, 500, { error: "failed" });
       else res.destroy();
     });
   }
   if (req.method === "GET") return serveStatic(req, res, url.pathname);
-  sendJson(res, 405, { error: "Methode nicht erlaubt." });
+  sendJson(res, 405, { error: "method" });
 });
 
 async function handleConvert(req, res, url) {
-  const bitrate = url.searchParams.get("bitrate") ?? "192";
+  const bitrate = url.searchParams.get("bitrate") ?? "320";
   if (!BITRATES.has(bitrate)) {
-    return sendJson(res, 400, { error: "Unbekannte Bitrate." });
+    return sendJson(res, 400, { error: "bad-bitrate" });
   }
 
   const originalName = safeDownloadName(url.searchParams.get("name") || "audio.wav");
@@ -49,7 +49,7 @@ async function handleConvert(req, res, url) {
   try {
     await writeBody(req, inputPath, MAX_BYTES);
     if (!(await looksLikeWav(inputPath))) {
-      return sendJson(res, 400, { error: "Das ist keine WAV-Datei." });
+      return sendJson(res, 400, { error: "not-wav" });
     }
 
     await runFfmpeg(inputPath, outputPath, bitrate, res);
@@ -75,17 +75,17 @@ async function handleConvert(req, res, url) {
     if (error.ffmpeg || error.code === "ENOENT") console.error(error.message);
     if (res.headersSent || res.writableEnded) return;
     const status = error.status ?? 500;
-    const message =
+    const code =
       error.code === "ENOENT"
-        ? "ffmpeg wurde nicht gefunden."
+        ? "ffmpeg-missing"
         : status === 413
-          ? "Die Datei ist zu groß (maximal 500 MB)."
+          ? "too-large"
           : status === 400
-            ? "Die Datei ist leer."
+            ? "empty"
             : error.ffmpeg
-              ? "ffmpeg konnte die Datei nicht umwandeln."
-              : "Umwandlung fehlgeschlagen.";
-    sendJson(res, status, { error: message });
+              ? "ffmpeg-failed"
+              : "failed";
+    sendJson(res, status, { error: code });
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }
@@ -201,7 +201,7 @@ async function serveStatic(_req, res, pathname) {
   const requested = (pathname === "/" ? "index.html" : pathname).replace(/^\/+/, "");
   const filePath = path.resolve(PUBLIC_DIR, decodeURIComponent(requested));
   if (filePath !== path.join(PUBLIC_DIR, "index.html") && !filePath.startsWith(PUBLIC_DIR + path.sep)) {
-    return sendJson(res, 403, { error: "Zugriff verweigert." });
+    return sendJson(res, 403, { error: "forbidden" });
   }
 
   try {
@@ -214,7 +214,7 @@ async function serveStatic(_req, res, pathname) {
     });
     res.end(data);
   } catch {
-    if (!res.headersSent) sendJson(res, 404, { error: "Nicht gefunden." });
+    if (!res.headersSent) sendJson(res, 404, { error: "not-found" });
   }
 }
 
