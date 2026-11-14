@@ -1,6 +1,6 @@
 # wav-to-mp3
 
-wav-to-mp3 turns WAV files into MP3s on this computer. A recording, a bounce, or a voice memo often arrives as WAV. This page makes an MP3 you can send or drop into a set, without uploading the audio anywhere.
+wav-to-mp3 is a local app that turns WAV files into MP3s. A recording, a bounce, or a voice memo often arrives as WAV. This page makes an MP3 you can send or drop into a set, without uploading the audio anywhere.
 
 Drop the files, pick a bitrate, and download one MP3 or the whole batch as a ZIP. ffmpeg encodes with LAME. The page talks only to a small server on this computer, and that server listens on localhost.
 
@@ -8,35 +8,35 @@ Drop the files, pick a bitrate, and download one MP3 or the whole batch as a ZIP
 
 ![wav-to-mp3 in English, with the language switch and two finished files](docs/screenshot.png)
 
-The page opens in English. Use **DE** in the header to switch to German. That choice stays in this browser.
+English is the default. Use **DE** in the header to switch to German. That choice is stored locally.
 
-## Run
+## Web
 
-Install [ffmpeg](https://ffmpeg.org/) with the LAME encoder, then start the page:
+Node 20 or newer, and system [ffmpeg](https://ffmpeg.org/) with LAME:
 
 ```bash
 brew install ffmpeg
 npm start
 ```
 
-The app opens `http://127.0.0.1:3847`. Node 20 or newer is required.
+The page opens at `http://127.0.0.1:3847`.
 
 Set `PORT` to use another port. Set `OPEN=0` to start without opening the browser.
 
 ## Desktop
 
-The desktop app is the same page and the same conversion server, opened in an Electron window. It listens only on `127.0.0.1`, on a free port. Temporary files stay in the system temp directory. The language choice stays in the app profile under the platform user-data directory. The window does not load remote pages.
+The desktop app is the same page and the same conversion server, opened in an Electron window. It listens only on `127.0.0.1`, on a free port. Temporary files stay in the system temp directory. The language choice stays in the app user-data directory. The window does not load remote pages.
 
-ffmpeg 6.1.1, including LAME, is downloaded as a separate program and shipped beside the app. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). It is not linked into the JavaScript.
+ffmpeg 6.1.1 with LAME is downloaded by `npm run fetch-ffmpeg` / `predev` and shipped beside the app. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). It is not linked into the JavaScript.
 
 ```bash
 npm install
 npm run dev
 ```
 
-`npm run dev` downloads the ffmpeg binaries once, then opens the window.
+`npm run dev` runs that download, then opens the window.
 
-Packaging writes installers into `release/`:
+Packaging is local. A git push does not build or publish the desktop app. There is no GitHub Action for it.
 
 ```bash
 npm run dist:mac
@@ -44,13 +44,15 @@ npm run dist:win
 npm run dist:linux
 ```
 
-`npm run dist` builds all three. A published build checks GitHub Releases for a newer version:
+`npm run dist` builds all three into `release/`.
 
 ```bash
 GH_TOKEN=... npm run dist:publish
 ```
 
-macOS and Windows builds from this repo are unsigned. Gatekeeper and SmartScreen warn until the app is signed and, on macOS, notarized. Auto-update on macOS needs a signed zip. There is no Windows ARM build, because the bundled ffmpeg is x64 there. Linux packages are x64 and arm64.
+That publishes a GitHub Release the installed app can see as an update.
+
+macOS and Windows builds are unsigned. Gatekeeper and SmartScreen warn until the app is signed and, on macOS, notarized. Auto-update on macOS needs a signed zip. There is no Windows ARM ffmpeg, so the Windows build is x64. Linux packages are x64 and arm64. This Mac cannot execute the Windows or Linux binaries.
 
 ### Manual checks
 
