@@ -40,12 +40,9 @@ header { margin-bottom: 28px; }
 .header-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-end;
   margin-bottom: 8px;
 }
-
-.header-row .eyebrow { margin: 0; }
 
 .lang {
   display: flex;
@@ -71,15 +68,6 @@ header { margin-bottom: 28px; }
 .lang button[aria-pressed="true"]:hover {
   background: var(--ink);
   color: #fbf7f1;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: var(--accent-deep);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 
 h1 {

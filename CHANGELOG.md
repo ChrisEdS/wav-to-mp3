@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Desktop app for macOS, Windows, and Linux. The same local server runs inside Electron, with a bundled ffmpeg and update checks against GitHub Releases.
+
 ## 1.0.0
 
 - Convert WAV files to MP3 on this computer, using local ffmpeg.

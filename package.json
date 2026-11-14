@@ -4,14 +4,89 @@
   "private": true,
   "type": "module",
   "description": "Local page that converts WAV files to MP3 with ffmpeg.",
+  "author": "ChrisEdS",
+  "homepage": "https://github.com/ChrisEdS/wav-to-mp3",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ChrisEdS/wav-to-mp3.git"
   },
+  "main": "electron/main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "fetch-ffmpeg": "node scripts/fetch-ffmpeg.mjs",
+    "predev": "node scripts/fetch-ffmpeg.mjs",
+    "dev": "electron .",
+    "smoke": "node scripts/smoke.mjs",
+    "predist": "node scripts/fetch-ffmpeg.mjs",
+    "dist": "electron-builder",
+    "predist:mac": "node scripts/fetch-ffmpeg.mjs",
+    "dist:mac": "electron-builder --mac",
+    "predist:win": "node scripts/fetch-ffmpeg.mjs",
+    "dist:win": "electron-builder --win",
+    "predist:linux": "node scripts/fetch-ffmpeg.mjs",
+    "dist:linux": "electron-builder --linux",
+    "predist:publish": "node scripts/fetch-ffmpeg.mjs",
+    "dist:publish": "electron-builder --publish always"
   },
   "engines": {
     "node": ">=20"
+  },
+  "build": {
+    "appId": "com.chriseds.wavtomp3",
+    "productName": "WAV to MP3",
+    "copyright": "Copyright © ChrisEdS",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "public/**",
+      "server.js",
+      "package.json",
+      "THIRD-PARTY-NOTICES.md"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/ffmpeg/${os}-${arch}",
+        "to": "ffmpeg"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "icon": "build/icon.png",
+      "identity": null,
+      "gatekeeperAssess": false,
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "AudioVideo",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "ChrisEdS",
+      "repo": "wav-to-mp3"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.3.2",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

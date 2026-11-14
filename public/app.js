@@ -14,7 +14,6 @@ let lang = "en";
 const copy = {
   en: {
     title: "WAV to MP3",
-    eyebrow: "On this Mac",
     lede: "Drop one or more WAV files here. Conversion stays on this computer, and you download the MP3s when they are ready.",
     quality: "Quality",
     drop: "Drop WAV files here",
@@ -42,7 +41,6 @@ const copy = {
   },
   de: {
     title: "WAV zu MP3",
-    eyebrow: "Lokal auf diesem Mac",
     lede: "Zieh eine oder mehrere WAV-Dateien hierher. Die Umwandlung bleibt auf diesem Rechner, die MP3s lädst du danach herunter.",
     quality: "Qualität",
     drop: "WAV-Dateien hierher ziehen",

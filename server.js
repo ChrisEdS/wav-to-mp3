@@ -5,10 +5,12 @@ import { createReadStream, createWriteStream } from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
 const HOST = "127.0.0.1";
+let ffmpegPath = process.env.FFMPEG_PATH || "ffmpeg";
+const activeFfmpeg = new Set();
 const MAX_BYTES = 500 * 1024 * 1024;
 const BITRATES = new Set(["128", "192", "256", "320"]);
 const MIME = {
@@ -142,7 +144,7 @@ async function looksLikeWav(filePath) {
 function runFfmpeg(inputPath, outputPath, bitrate, res) {
   return new Promise((resolve, reject) => {
     const ff = spawn(
-      "ffmpeg",
+      ffmpegPath,
       [
         "-hide_banner",
         "-nostdin",
@@ -163,6 +165,7 @@ function runFfmpeg(inputPath, outputPath, bitrate, res) {
       { stdio: ["ignore", "ignore", "pipe"] },
     );
 
+    activeFfmpeg.add(ff);
     let stderr = "";
     ff.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
@@ -177,6 +180,7 @@ function runFfmpeg(inputPath, outputPath, bitrate, res) {
 
     ff.on("error", (error) => {
       clearTimeout(timer);
+      activeFfmpeg.delete(ff);
       res.off("close", stop);
       if (error.code === "ENOENT") {
         error.message = "ffmpeg fehlt";
@@ -186,6 +190,7 @@ function runFfmpeg(inputPath, outputPath, bitrate, res) {
 
     ff.on("close", (code) => {
       clearTimeout(timer);
+      activeFfmpeg.delete(ff);
       res.off("close", stop);
       if (code === 0) resolve();
       else {
@@ -246,24 +251,67 @@ function formatBytes(bytes) {
 
 function ffmpegReady() {
   return new Promise((resolve) => {
-    execFile("ffmpeg", ["-hide_banner", "-encoders"], (error, stdout) => {
+    execFile(ffmpegPath, ["-hide_banner", "-encoders"], { maxBuffer: 2 * 1024 * 1024 }, (error, stdout) => {
       resolve(!error && stdout.includes("libmp3lame"));
     });
   });
 }
 
-const preferredPort = Number(process.env.PORT) || 3847;
-
-if (!(await ffmpegReady())) {
-  console.error("ffmpeg mit libmp3lame wurde nicht gefunden. Installiere es mit: brew install ffmpeg");
-  process.exit(1);
+export function stopActiveEncodes() {
+  for (const ff of activeFfmpeg) ff.kill("SIGKILL");
+  activeFfmpeg.clear();
 }
 
-server.listen(preferredPort, HOST, () => {
-  const { port } = server.address();
-  const url = `http://${HOST}:${port}`;
-  console.log(`WAV zu MP3 läuft auf ${url}`);
-  if (process.env.OPEN !== "0") {
-    spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
-  }
-});
+export function startServer(options = {}) {
+  if (options.ffmpegPath) ffmpegPath = options.ffmpegPath;
+  const openBrowser = options.openBrowser ?? process.env.OPEN !== "0";
+  const port = options.port ?? (Number(process.env.PORT) || 3847);
+
+  return (async () => {
+    if (!(await ffmpegReady())) {
+      const error = new Error(
+        "ffmpeg mit libmp3lame wurde nicht gefunden. Installiere es mit: brew install ffmpeg",
+      );
+      error.code = "ENOENT";
+      throw error;
+    }
+
+    await new Promise((resolve, reject) => {
+      const onError = (error) => {
+        server.off("error", onError);
+        reject(error);
+      };
+      server.once("error", onError);
+      server.listen(port, HOST, () => {
+        server.off("error", onError);
+        resolve();
+      });
+    });
+
+    const address = server.address();
+    const url = `http://${HOST}:${address.port}`;
+    console.log(`WAV zu MP3 läuft auf ${url}`);
+    if (openBrowser && process.platform === "darwin") {
+      spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
+    }
+    return { url, port: address.port };
+  })();
+}
+
+export function stopServer() {
+  stopActiveEncodes();
+  return new Promise((resolve) => {
+    if (!server.listening) resolve();
+    else server.close(() => resolve());
+  });
+}
+
+const isDirectRun =
+  process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+
+if (isDirectRun) {
+  startServer().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+  });
+}
